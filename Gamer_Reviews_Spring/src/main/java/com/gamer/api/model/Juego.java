@@ -1,4 +1,5 @@
 package com.gamer.api.model;
+import java.sql.Date;
 import java.time.LocalDate;
  // 1) Modelo y DTOs
 public class Juego {
@@ -31,6 +32,8 @@ public class Juego {
 	public void setDescripcion(String descripcion) {
 		this.descripcion = descripcion;
 	}
+	
+	
 	public LocalDate getFechaPublicacion() {
 		return fechaPublicacion;
 	}
