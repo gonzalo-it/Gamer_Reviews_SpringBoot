@@ -3,15 +3,19 @@ package com.gamer.api.controller;
 
 /* Observaciones:
 
-En create-juego y edit-game acepto parámetros @RequestParam y @RequestPart MultipartFile para emular [FromForm] de C#.
+En create-juego y edit-game acepto parametros @RequestParam y @RequestPart MultipartFile para emular [FromForm] de C#.
 
-Ajustá los nombres de los parámetros si tu front los envía con otros keys.
+Ajusta los nombres de los parametros si tu front los envía con otros keys.
 */
 
 import com.gamer.api.dto.*;
+import com.gamer.api.model.FavoriteGame;
+import com.gamer.api.model.IsFavoriteResult;
 import com.gamer.api.model.Juego;
 import com.gamer.api.service.JuegoService;
 import com.gamer.api.storage.FileStorageService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.*;
@@ -21,16 +25,21 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.*;
 
+import com.gamer.api.service.CarouselJuegoService;  // 👈 usa tu nuevo servicio
+
 @RestController
 @RequestMapping("/api/juego")
 public class JuegoController {
 
     private final JuegoService juegoService;
     private final FileStorageService fileStorage;
+    private final CarouselJuegoService carouselStorage;  // 👈 cambia el tipo
 
-    public JuegoController(JuegoService juegoService, @Qualifier("imageFileStorageService") FileStorageService fileStorage) {
+    public JuegoController(JuegoService juegoService, @Qualifier("imageFileStorageService") FileStorageService fileStorage, 
+    						CarouselJuegoService carouselStorage) {
         this.juegoService = juegoService;
         this.fileStorage = fileStorage;
+        this.carouselStorage = carouselStorage;
     }
 
     @PostMapping("/create-juego")
@@ -138,4 +147,87 @@ public class JuegoController {
         List<Map<String,Object>> ranking = juegoService.getTopRanking();
         return ResponseEntity.ok(new DataResponse<>(true, 200, "OK", ranking));
     }
+    
+ // ================= FAVORITOS =================
+    @PostMapping("/add-favorite-game")
+    public ResponseEntity<BaseResponse> addFavoriteGame(@RequestBody FavoriteGame request) {
+        try {
+            int result = carouselStorage.addOrRemoveFavorite(
+                    request.getUsuarioId(),
+                    request.getJuegoId(),
+                    request.isBotonCheck()
+            );
+
+            return switch (result) {
+                case 0 -> ResponseEntity.ok(new BaseResponse(true, 200, "Operación de favorito ejecutada correctamente"));
+                case 1 -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new BaseResponse(false, 404, "Usuario o juego no encontrado"));
+                default -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new BaseResponse(false, 400, "Error desconocido"));
+            };
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse(false, 500, "Error: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/is-favorite")
+    public ResponseEntity<BaseResponse> isFavorite(@RequestParam int usuarioId, @RequestParam int juegoId) {
+        try {
+            Optional<Boolean> result = carouselStorage.isFavorite(usuarioId, juegoId);
+            if (result.isPresent()) {
+                IsFavoriteResult dto = new IsFavoriteResult();
+                dto.setIsFavorite(result.get());
+                return ResponseEntity.ok(new DataResponse<>(true, 200, "OK", dto));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new BaseResponse(false, 404, "No encontrado"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse(false, 500, "Error en isFavorite: " + e.getMessage()));
+        }
+    }
+
+    // ================= PRÓXIMOS LANZAMIENTOS =================
+
+    @PostMapping(value = "/create-proxjuego", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaseResponse> createProxJuego(
+            @RequestParam("nombre") String nombre,
+            @RequestParam("imagen") MultipartFile imagen
+    ) {
+        try {
+            BaseResponse res = carouselStorage.createProxJuego(nombre, imagen);
+            return ResponseEntity.status(res.getCode()).body(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse(false, 500, "Error al crear el próximo juego: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/get-proxjuegos")
+    public ResponseEntity<BaseResponse> getProxJuegos(HttpServletRequest request) {
+        try {
+            var lista = carouselStorage.getAllProxJuegos(request);
+            return ResponseEntity.ok(new DataResponse<>(true, 200, "Lista obtenida con éxito", lista));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse(false, 500, "Error: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/delete-proxjuego")
+    public ResponseEntity<BaseResponse> deleteProxJuego(
+            @RequestParam int id,
+            @RequestParam String imagenVieja
+    ) {
+        try {
+            BaseResponse res = carouselStorage.deleteProxJuego(id, imagenVieja);
+            return ResponseEntity.status(res.getCode()).body(res);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse(false, 500, "Error al eliminar el próximo juego: " + e.getMessage()));
+        }
+    }
+
 }
