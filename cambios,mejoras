@@ -1,0 +1,25 @@
+para las respuestas: 
+
+Stored Procedure corregido
+✔ Nombre correcto respuesta_id
+✔ Devolver foto del usuario
+✔ Cambios necesarios en el backend (Service + Model)
+✔ Nada te va a tirar 404 ni undefined
+
+nuevo sp
+ALTER PROCEDURE sp_GetRespuestasByComentario
+    @comentario_id INT
+AS
+BEGIN
+    SELECT 
+        r.respuesta_id,                -- ✔ corregido
+        r.comentario AS respuestaTexto,
+        r.comentario_id,
+        r.usuario_id,
+        u.nombre AS UsuarioNombre,
+        u.foto_perfil AS perfilURL,    -- ✔ ahora devuelve la foto
+        r.baja
+    FROM respuestas r
+    INNER JOIN usuarios u ON u.usuario_id = r.usuario_id
+    WHERE r.comentario_id = @comentario_id AND r.baja = 0;
+END;
