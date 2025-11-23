@@ -152,10 +152,14 @@ public class UsuarioService {
         u.setUsuarioId(rs.getInt("usuario_id"));
         u.setCorreo(rs.getString("correo"));
         u.setUsuario(rs.getString("nombre"));
+
+        // YA VIENE ABSOLUTA
         String foto = rs.getString("perfilURL");
-        u.setPerfilURL(foto != null ? baseUrl + "/users/" + foto : null);
+        u.setPerfilURL(foto);
+
         u.setRol(rs.getByte("rol"));
         u.setBaja(rs.getByte("baja"));
         return u;
     }
+
 }

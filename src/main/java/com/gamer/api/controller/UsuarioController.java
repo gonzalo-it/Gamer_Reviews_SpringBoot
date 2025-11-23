@@ -3,6 +3,7 @@ package com.gamer.api.controller;
 import com.gamer.api.dto.*;
 import com.gamer.api.model.Usuario;
 import com.gamer.api.service.UsuarioService;
+import com.gamer.api.storage.UserFileStorageService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -16,7 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.Optional;
 
-import com.gamer.api.service.FileStorageService;
+
+import com.gamer.api.storage.UserFileStorageService;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
@@ -87,7 +89,7 @@ public class UsuarioController {
     //Metodo: PATCH... para actualizar la foto del usuario URL: http://localhost:8080/api/login/update-user
         @Autowired
         @Qualifier("userFileStorageService")
-        private FileStorageService fileStorageService;
+        private UserFileStorageService userFileStorageService;
 
         @PatchMapping("/update-user")
         public ResponseEntity<BaseResponse> updateUser(
@@ -95,64 +97,71 @@ public class UsuarioController {
                 @RequestParam(required = false) String correo,
                 @RequestParam(required = false) String contrasena,
                 @RequestParam(required = false) String nombre,
-                @RequestParam(required = false) MultipartFile imagen,
-                @RequestParam(required = false) String urlVieja) {
+                @RequestParam(name = "perfilURL", required = false) MultipartFile imagen,
+
+              //  @RequestParam(required = false) MultipartFile imagen,
+                @RequestParam(required = false) String urlVieja,
+                HttpServletRequest request) {
+        	if (usuarioId <= 0)
+        	    return ResponseEntity.badRequest().body(new BaseResponse(false, 400, "usuarioId inválido"));
+
 
             try {
-                String nombreImagen = null;
+                String imagenUrl = null;
 
                 if (imagen != null && !imagen.isEmpty()) {
-                    String contentType = imagen.getContentType();
-                    if (!contentType.matches("image/(jpeg|png|webp|jpg)")) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(new BaseResponse(false, 400, "Formato de imagen no permitido."));
+
+                    if (urlVieja != null && !urlVieja.isBlank()) {
+                        userFileStorageService.deleteImage(urlVieja);
                     }
 
-                    if (urlVieja != null && !urlVieja.isEmpty()) {
-                        fileStorageService.deleteFile(urlVieja);
-                    }
-
-                    nombreImagen = fileStorageService.saveFile(imagen);
+                    imagenUrl = userFileStorageService.saveImage(imagen, request);
                 }
 
-                int result = usuarioService.updateUser(usuarioId, correo, contrasena, nombre, nombreImagen);
+                int result = usuarioService.updateUser(
+                        usuarioId, correo, contrasena, nombre, imagenUrl
+                );
 
                 if (result == 0)
                     return ResponseEntity.ok(new BaseResponse(true, 200, "Usuario actualizado correctamente"));
-                else if (result == 1)
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body(new BaseResponse(false, 404, "Usuario no encontrado"));
-                else
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(new BaseResponse(false, 500, "Error desconocido"));
 
-            } catch (IOException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new BaseResponse(false, 500, "Error al guardar imagen: " + e.getMessage()));
+                return ResponseEntity.status(404)
+                        .body(new BaseResponse(false, 404, "Usuario no encontrado"));
+
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                return ResponseEntity.status(500)
                         .body(new BaseResponse(false, 500, "Error en update-user: " + e.getMessage()));
             }
         }
+
+        
         
         // GET /api/login/getIconXUser
         @GetMapping("/getIconXUser")
-        public ResponseEntity<BaseResponse> getIconXUser(@RequestParam("usuario_id") int usuarioId,
-                                                         HttpServletRequest request) {
+        public ResponseEntity<BaseResponse> getIconXUser(
+                @RequestParam("usuario_id") int usuarioId,
+                HttpServletRequest request) {
+
             try {
                 Optional<String> icon = usuarioService.getIconUser(usuarioId);
-                if (icon.isEmpty())
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body(new BaseResponse(false, 404, "Usuario no encontrado"));
+                
+                String iconUrl = null;
 
-                String fullUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + "/users/" + icon.get();
-                return ResponseEntity.ok(new DataResponse<>(true, 200, "OK", fullUrl));
+                if (icon.isPresent() && icon.get() != null && !icon.get().isEmpty()) {
+                    iconUrl = request.getScheme() + "://" + request.getServerName() 
+                            + ":" + request.getServerPort() + "/users/" + icon.get();
+                }
+
+                return ResponseEntity.ok(
+                    new DataResponse<>(true, 200, "OK", iconUrl)
+                );
 
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(new BaseResponse(false, 500, "Error en getIconXUser: " + e.getMessage()));
             }
         }
+
 
         // GET /api/login/get-all-users
         @GetMapping("/get-all-users")
