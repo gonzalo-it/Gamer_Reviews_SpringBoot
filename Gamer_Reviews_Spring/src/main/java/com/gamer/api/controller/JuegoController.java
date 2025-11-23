@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 import com.gamer.api.service.CarouselJuegoService;  // 👈 usa tu nuevo servicio
+import com.gamer.api.service.GetPuntuacionYNumReviewsH;
 
 @RestController
 @RequestMapping("/api/Juego")
@@ -34,12 +35,16 @@ public class JuegoController {
     private final JuegoService juegoService;
     private final FileStorageService fileStorage;
     private final CarouselJuegoService carouselStorage;  // 👈 cambia el tipo
+    private final GetPuntuacionYNumReviewsH puntuacionHandler;
 
-    public JuegoController(JuegoService juegoService, @Qualifier("imageFileStorageService") FileStorageService fileStorage, 
-    						CarouselJuegoService carouselStorage) {
+    public JuegoController(JuegoService juegoService,
+                           @Qualifier("imageFileStorageService") FileStorageService fileStorage,
+                           CarouselJuegoService carouselStorage,
+                           GetPuntuacionYNumReviewsH puntuacionHandler) {
         this.juegoService = juegoService;
         this.fileStorage = fileStorage;
         this.carouselStorage = carouselStorage;
+        this.puntuacionHandler = puntuacionHandler;
     }
 
     @PostMapping("/create-juego")
@@ -227,6 +232,17 @@ public class JuegoController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new BaseResponse(false, 500, "Error al eliminar el próximo juego: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/getPuntuacion/NumReviews")
+    public ResponseEntity<BaseResponse> getPuntuacionYNumReviews(@RequestParam int juego_id) {
+        try {
+            var result = puntuacionHandler.getAll(juego_id);
+            return ResponseEntity.status(result.getCode()).body(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse(false, 500, "Error: " + e.getMessage()));
         }
     }
 
