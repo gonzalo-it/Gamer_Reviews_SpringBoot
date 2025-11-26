@@ -18,7 +18,7 @@ public class BusquedaService {
 
     // Llama a sp_GetSearchGames
     public List<Juego> buscarJuegos(String searchTerm, String baseUrl) {
-        String sql = "EXEC sp_GetSearchGames @search_term = ?";
+    	String sql = "{call sp_GetSearchGames(?)}";
         return jdbcTemplate.query(sql, new Object[]{searchTerm}, (rs, rowNum) -> {
             Juego j = new Juego();
             j.setId(rs.getInt("Id"));
@@ -34,9 +34,22 @@ public class BusquedaService {
             j.setEditor(rs.getString("editor"));
             j.setPlataforma(rs.getString("plataforma"));
             String img = rs.getString("imagenURL");
-            if (img != null && !img.isBlank())
-                j.setImagenURL(baseUrl + "/uploads/" + img);
-            return j;
-        });
-    }
-}
+            if (img != null && !img.isBlank()) {
+                // Si ya es una URL absoluta o ya contiene /uploads, respetarla o completarla correctamente
+                if (img.startsWith("http")) {
+                    j.setImagenURL(img);
+                } else if (img.startsWith("/uploads")) {
+                    j.setImagenURL(baseUrl + img);
+                } else if (img.contains("/uploads/")) {
+                    // por si el SP devuelve "games/xxx" o "uploads/games/xxx"
+                    if (img.startsWith("uploads")) j.setImagenURL(baseUrl + "/" + img);
+                    else j.setImagenURL(baseUrl + "/uploads/games/" + img);
+                } else {
+                    // Asumimos solo nombre de archivo → usar la carpeta games
+                    j.setImagenURL(baseUrl + "/uploads/games/" + img);
+                }
+            }
+             return j;
+         });
+     }
+ }

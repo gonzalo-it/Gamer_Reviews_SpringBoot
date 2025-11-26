@@ -22,24 +22,28 @@ public class BusquedaController {
         this.busquedaService = busquedaService;
     }
 
-    // GET /api/busqueda/get-search-games?search_term=texto
     @GetMapping("/get-search-games")
     public ResponseEntity<?> getSearchGames(
             @RequestParam("search_term") String searchTerm,
             HttpServletRequest request) {
-
         try {
+            System.out.println("Search term received: " + searchTerm); // Debug
+            
             String baseUrl = request.getScheme() + "://" + request.getServerName() +
                     (request.getServerPort() != 80 && request.getServerPort() != 443
                             ? ":" + request.getServerPort() : "");
-
+            
+            System.out.println("Base URL: " + baseUrl); // Debug
+            
             List<Juego> juegos = busquedaService.buscarJuegos(searchTerm, baseUrl);
-
+            
+            System.out.println("Results found: " + juegos.size()); // Debug
+            
             if (juegos.isEmpty())
                 return ResponseEntity.ok(new DataResponse<>(true, 200, "Sin resultados", List.of()));
-
             return ResponseEntity.ok(new DataResponse<>(true, 200, "Lista de juegos", juegos));
         } catch (Exception e) {
+            e.printStackTrace(); // IMPORTANT: Check your console!
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new BaseResponse(false, 500, "Error en búsqueda: " + e.getMessage()));
         }
