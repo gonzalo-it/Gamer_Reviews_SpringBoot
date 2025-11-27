@@ -267,11 +267,10 @@ public class JuegoController {
     // LAZY LOADING
     // ============================================================
     @GetMapping("/get-all-games-lazy")
-    public ResponseEntity<?> getGamesLazy(
-            @RequestParam int page,
-            @RequestParam int size,
-            HttpServletRequest request
-    ) {
+    public ResponseEntity<?> getGamesLazy(HttpServletRequest request) {
+        int page = parseIntParam(request, new String[]{"page", "pageNumber"}, 1);
+        int size = parseIntParam(request, new String[]{"size", "pageSize"}, 20);
+
         List<Map<String, Object>> lista = juegoService.getGamesLazy(page, size);
 
         String baseUrl = request.getScheme() + "://" +
@@ -287,9 +286,18 @@ public class JuegoController {
         return ResponseEntity.ok(new DataResponse<>(true, 200, "OK", lista));
     }
 
-    
-    
-
+    private int parseIntParam(HttpServletRequest request, String[] keys, int defaultValue) {
+        for (String k : keys) {
+            String v = request.getParameter(k);
+            if (v != null && !v.isBlank()) {
+                try {
+                    return Integer.parseInt(v);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        return defaultValue;
+    }
 
     // ============================================================
     // DELETE (BAJA)
