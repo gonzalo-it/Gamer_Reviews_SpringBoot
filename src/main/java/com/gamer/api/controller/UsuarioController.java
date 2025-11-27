@@ -91,49 +91,75 @@ public class UsuarioController {
         @Qualifier("userFileStorageService")
         private UserFileStorageService userFileStorageService;
 
-        @PatchMapping("/update-user")
+        @PatchMapping(value = "/update-user", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         public ResponseEntity<BaseResponse> updateUser(
-                @RequestParam int usuarioId,
-                @RequestParam(required = false) String correo,
-                @RequestParam(required = false) String contrasena,
-                @RequestParam(required = false) String nombre,
-                @RequestParam(name = "perfilURL", required = false) MultipartFile imagen,
-
-              //  @RequestParam(required = false) MultipartFile imagen,
-                @RequestParam(required = false) String urlVieja,
+                @RequestParam(value = "usuarioId", required = false) String usuarioIdStr,
+                @RequestParam(value = "correo", required = false) String correo,
+                @RequestParam(value = "contrasena", required = false) String contrasena,
+                @RequestParam(value = "nombre", required = false) String nombre,
+                @RequestParam(value = "perfilURL", required = false) MultipartFile imagen,
+                @RequestParam(value = "urlVieja", required = false) String urlVieja,
                 HttpServletRequest request) {
-        	if (usuarioId <= 0)
-        	    return ResponseEntity.badRequest().body(new BaseResponse(false, 400, "usuarioId inválido"));
 
+            if (usuarioIdStr == null || usuarioIdStr.equals("undefined") || usuarioIdStr.isBlank()) {
+                return ResponseEntity.badRequest()
+                    .body(new BaseResponse(false, 400, "usuarioId es requerido"));
+            }
+
+            Integer usuarioId;
+            try {
+                usuarioId = Integer.parseInt(usuarioIdStr);
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest()
+                    .body(new BaseResponse(false, 400, "usuarioId inválido"));
+            }
+
+            if (usuarioId <= 0) {
+                return ResponseEntity.badRequest()
+                    .body(new BaseResponse(false, 400, "usuarioId debe ser mayor a 0"));
+            }
+
+            correo = cleanStringParam(correo);
+            contrasena = cleanStringParam(contrasena);
+            nombre = cleanStringParam(nombre);
+            urlVieja = cleanStringParam(urlVieja);
 
             try {
                 String imagenUrl = null;
 
                 if (imagen != null && !imagen.isEmpty()) {
-
                     if (urlVieja != null && !urlVieja.isBlank()) {
-                        userFileStorageService.deleteImage(urlVieja);
+                        try {
+                            userFileStorageService.deleteImage(urlVieja);
+                        } catch (Exception e) {
+                            System.err.println("Error eliminando imagen vieja: " + e.getMessage());
+                        }
                     }
-
                     imagenUrl = userFileStorageService.saveImage(imagen, request);
                 }
 
-                int result = usuarioService.updateUser(
-                        usuarioId, correo, contrasena, nombre, imagenUrl
-                );
+                int result = usuarioService.updateUser(usuarioId, correo, contrasena, nombre, imagenUrl);
 
-                if (result == 0)
+                if (result == 0) {
                     return ResponseEntity.ok(new BaseResponse(true, 200, "Usuario actualizado correctamente"));
-
-                return ResponseEntity.status(404)
-                        .body(new BaseResponse(false, 404, "Usuario no encontrado"));
+                } else {
+                    return ResponseEntity.status(404)
+                            .body(new BaseResponse(false, 404, "Usuario no encontrado"));
+                }
 
             } catch (Exception e) {
+                e.printStackTrace();
                 return ResponseEntity.status(500)
-                        .body(new BaseResponse(false, 500, "Error en update-user: " + e.getMessage()));
+                        .body(new BaseResponse(false, 500, "Error: " + e.getMessage()));
             }
         }
 
+        private String cleanStringParam(String param) {
+            if (param == null || param.equals("undefined") || param.equals("null") || param.isBlank()) {
+                return null;
+            }
+            return param.trim();
+        }
         
         
         // GET /api/login/getIconXUser

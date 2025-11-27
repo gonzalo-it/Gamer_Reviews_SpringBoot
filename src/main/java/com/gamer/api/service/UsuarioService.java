@@ -97,7 +97,8 @@ public class UsuarioService {
 
     // sp_UpdateUser
     //Usá la versión que acepta dos lambdas: una para crear el CallableStatement, y otra para ejecutarlo. Así:
-    public int updateUser(int usuarioId, String correo, String contrasena, String nombre, String perfilURL) {
+    public int updateUser(Integer usuarioId, String correo, String contrasena, String nombre, String perfilURL) {
+        System.out.println(">>> SERVICE: Calling SP with params...");
         String call = "{? = call sp_UpdateUser(?, ?, ?, ?, ?)}";
         return jdbcTemplate.execute(
             (Connection conn) -> {
@@ -108,11 +109,15 @@ public class UsuarioService {
                 cs.setString(4, contrasena);
                 cs.setString(5, nombre);
                 cs.setString(6, perfilURL);
+                System.out.println(">>> SERVICE: CallableStatement prepared");
                 return cs;
             },
             (CallableStatement cs) -> {
+                System.out.println(">>> SERVICE: Executing SP...");
                 cs.execute();
-                return cs.getInt(1);
+                int result = cs.getInt(1);
+                System.out.println(">>> SERVICE: SP returned " + result);
+                return result;
             }
         );
     }
