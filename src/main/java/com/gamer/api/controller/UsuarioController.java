@@ -170,12 +170,19 @@ public class UsuarioController {
 
             try {
                 Optional<String> icon = usuarioService.getIconUser(usuarioId);
-                
+
                 String iconUrl = null;
 
                 if (icon.isPresent() && icon.get() != null && !icon.get().isEmpty()) {
-                    iconUrl = request.getScheme() + "://" + request.getServerName() 
-                            + ":" + request.getServerPort() + "/users/" + icon.get();
+                    String iconPath = icon.get();
+                    
+                    // Extract just the filename if full URL is stored
+                    if (iconPath.startsWith("http")) {
+                        iconPath = iconPath.substring(iconPath.lastIndexOf("/") + 1);
+                    }
+                    
+                    iconUrl = request.getScheme() + "://" + request.getServerName()
+                            + ":" + request.getServerPort() + "/users/" + iconPath;
                 }
 
                 return ResponseEntity.ok(
