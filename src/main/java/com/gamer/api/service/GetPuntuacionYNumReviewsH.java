@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import javax.sql.DataSource;
 
 import java.sql.Types;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -24,39 +25,31 @@ public class GetPuntuacionYNumReviewsH {
     @Autowired
     public GetPuntuacionYNumReviewsH(DataSource dataSource) {
         this.jdbcCall = new SimpleJdbcCall(dataSource)
-                .withProcedureName("sp_GetCalificacionYCantReviews")
-                .declareParameters(
-                        new SqlParameter("juego_id", Types.INTEGER),
-                        new SqlOutParameter("TotalPuntos", Types.INTEGER),
-                        new SqlOutParameter("CantidadReviews", Types.INTEGER),
-                        new SqlOutParameter("Calificacion", Types.DECIMAL)
-                );
+                .withProcedureName("sp_ObtenerCalificacionJuego")
+                .returningResultSet("result", (rs, rowNum) -> {
+                    GetPuntNumRevR dto = new GetPuntNumRevR();
+                    dto.setJuego_id(rs.getInt("juegoId"));
+                    dto.setTotalPuntos(rs.getInt("totalPuntos"));
+                    dto.setCantidadReviews(rs.getInt("cantidadReviews"));
+                    dto.setCalificacion(rs.getDouble("calificacion"));
+                    return dto;
+                });
     }
+
 
     public BaseResponse getAll(int juego_id) {
         try {
-            MapSqlParameterSource params = new MapSqlParameterSource()
-                    .addValue("juego_id", juego_id);
+        	MapSqlParameterSource params = new MapSqlParameterSource()
+        	        .addValue("JuegoId", juego_id);
 
-            Map<String, Object> result = jdbcCall.execute(params);
+        	Map<String, Object> result = jdbcCall.execute(params);
 
-            System.out.println("SP result: " + result); // DEBUG
+        	@SuppressWarnings("unchecked")
+        	List<GetPuntNumRevR> list = (List<GetPuntNumRevR>) result.get("result");
 
-            Integer totalPuntos = (Integer) result.getOrDefault("TotalPuntos", 0);
-            Integer cantidadReviews = (Integer) result.getOrDefault("CantidadReviews", 0);
+        	GetPuntNumRevR dto = list.isEmpty() ? new GetPuntNumRevR() : list.get(0);
 
-            double calificacion = 0.0;
-            Object califObj = result.get("Calificacion");
-            if (califObj != null)
-                calificacion = ((Number) califObj).doubleValue();
-
-            GetPuntNumRevR dto = new GetPuntNumRevR();
-            dto.setJuego_id(juego_id);
-            dto.setTotalPuntos(totalPuntos);
-            dto.setCantidadReviews(cantidadReviews);
-            dto.setCalificacion(calificacion);
-
-            return new DataResponse<>(true, 200, "Datos obtenidos", dto);
+        	return new DataResponse<>(true, 200, "Datos obtenidos", dto);
 
         } catch (Exception e) {
             e.printStackTrace();

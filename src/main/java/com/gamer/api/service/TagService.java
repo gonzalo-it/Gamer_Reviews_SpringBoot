@@ -38,10 +38,9 @@ public class TagService {
 
     // sp_GetAllTags -> returns rows (tag_id, nombre)
     public List<GetTagResponse> getAllTags() {
-        String sql = "EXEC sp_GetAllTags";
+        String sql = "{call sp_GetAllTags}";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             GetTagResponse t = new GetTagResponse();
-            // depending on column name case, we use column label
             t.setTag_id(rs.getInt("tag_id"));
             t.setNombre(rs.getString("nombre"));
             return t;

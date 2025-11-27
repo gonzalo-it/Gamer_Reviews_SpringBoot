@@ -188,4 +188,13 @@ public class UsuarioController {
             }
         }
 
+        @PutMapping("/change-user-state")
+        public ResponseEntity<BaseResponse> changeUserState(
+            @RequestParam int id,
+            @RequestParam int baja) {
+            BaseResponse result = usuarioService.changeUserState(id, baja);
+            return ResponseEntity.status(result.getCode()).body(result);
+        }
+
+
 }

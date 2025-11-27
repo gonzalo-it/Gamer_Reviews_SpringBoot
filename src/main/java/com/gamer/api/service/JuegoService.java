@@ -111,9 +111,9 @@ public class JuegoService {
     // ============================================================
     // LAZY LOADING (paginado)
     // ============================================================
-    public List<Map<String, Object>> getGamesLazy(int pageNumber, int pageSize) {
+    public List<Map<String, Object>> getGamesLazy(int pageNumber, int limit) {
         String sql = "EXEC sp_GetGamesLazy @PageNumber = ?, @PageSize = ?";
-        return jdbcTemplate.queryForList(sql, pageNumber, pageSize);
+        return jdbcTemplate.queryForList(sql, pageNumber, limit);
     }
 
     // ============================================================

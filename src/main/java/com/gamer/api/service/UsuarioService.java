@@ -2,6 +2,7 @@ package com.gamer.api.service;
 
 import com.gamer.api.model.Usuario;
 import com.gamer.api.config.JwtUtil;
+import com.gamer.api.dto.BaseResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -162,4 +163,20 @@ public class UsuarioService {
         return u;
     }
 
+    public BaseResponse changeUserState(int id, int baja) {
+        try {
+            String sql = "UPDATE Usuarios SET baja = ? WHERE usuario_id = ?";
+            int rows = jdbcTemplate.update(sql, baja, id);
+
+            if (rows > 0) {
+                String msg = (baja == 1) ? "Usuario dado de baja" : "Usuario reactivado";
+                return new BaseResponse(true, 200, msg);
+            } else {
+                return new BaseResponse(false, 404, "Usuario no encontrado");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new BaseResponse(false, 500, "Error interno: " + e.getMessage());
+        }
+    }
 }
