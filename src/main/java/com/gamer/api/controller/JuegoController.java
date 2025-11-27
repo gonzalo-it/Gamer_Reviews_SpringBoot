@@ -332,21 +332,18 @@ public class JuegoController {
 
 
     @GetMapping("/get-ranking")
-    public ResponseEntity<DataResponse<List<Map<String,Object>>>> getRanking(HttpServletRequest request) {
-        List<Map<String,Object>> ranking = juegoService.getTopRanking();
-
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-
-        // Reconstruir image URLs en cada fila si existe la clave imagenURL
-        for (Map<String, Object> row : ranking) {
-            Object archivo = row.get("imagenURL");
-            if (archivo != null && !archivo.toString().isBlank()) {
-                row.put("imagenURL", baseUrl + "/uploads/games/" + archivo.toString());
-            }
-        }
-
-        return ResponseEntity.ok(new DataResponse<>(true, 200, "OK", ranking));
+    public ResponseEntity<DataResponse<List<JuegoRanking>>> getRanking(HttpServletRequest request) {
+    	String baseUrl = request.getScheme() + "://" 
+                + request.getServerName() + ":" 
+                + request.getServerPort();
+        List<JuegoRanking> ranking = juegoService.getTopRanking(baseUrl);
+        DataResponse<List<JuegoRanking>> response =
+                new DataResponse<>(true, 200, "Lista de juegos", ranking);
+        return ResponseEntity.ok(response);
     }
+
+
+
     
  // ================= FAVORITOS =================
     @PostMapping("/add-favorite-game")

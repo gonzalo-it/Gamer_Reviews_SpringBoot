@@ -1,6 +1,9 @@
 package com.gamer.api.service;
 
+import com.gamer.api.dto.JuegoRanking;
 import com.gamer.api.model.Juego;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -180,8 +183,29 @@ public class JuegoService {
     // ============================================================
     // RANKING
     // ============================================================
-    public List<Map<String,Object>> getTopRanking() {
+    public List<JuegoRanking> getTopRanking(String baseUrl) {
         String sql = "EXEC sp_GetTop10JuegosPorCalificacion";
-        return jdbcTemplate.queryForList(sql);
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+        	JuegoRanking dto = new JuegoRanking();
+            dto.setId(rs.getLong("Id"));
+            dto.setNombre(rs.getString("nombre"));
+            dto.setDescripcion(rs.getString("descripcion"));
+            String imagen = rs.getString("imagenURL");
+            if (imagen != null && !imagen.isBlank()) {
+                dto.setImagenURL(baseUrl + "/uploads/games/" + imagen);
+            }
+            dto.setFechaPublicacion(rs.getDate("FechaPublicacion").toLocalDate());
+            dto.setDesarrollador(rs.getString("desarrollador"));
+            dto.setEditor(rs.getString("editor"));
+            dto.setPlataforma(rs.getString("plataforma"));
+            dto.setTotalPuntos(rs.getInt("TotalPuntos"));
+            dto.setCantidadReviews(rs.getInt("CantidadReviews"));
+            dto.setCalificacion(rs.getDouble("Calificacion"));
+            return dto;
+        });
     }
+
+
+
 }
