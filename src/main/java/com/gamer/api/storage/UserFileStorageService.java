@@ -40,10 +40,8 @@ public class UserFileStorageService {
             Path target = root.resolve(fileName);
             Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
-            // URL absoluta igual que juegos
-            String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-
-            return baseUrl + "/uploads/users/" + fileName;
+            // Return only the filename, not the full URL
+            return fileName;
 
         } catch (Exception e) {
             throw new RuntimeException("Error guardando imagen de usuario", e);
