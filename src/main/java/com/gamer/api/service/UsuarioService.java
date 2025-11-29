@@ -159,8 +159,14 @@ public class UsuarioService {
         u.setCorreo(rs.getString("correo"));
         u.setUsuario(rs.getString("nombre"));
 
-        // YA VIENE ABSOLUTA
+        // Construir URL completa si existe foto
         String foto = rs.getString("perfilURL");
+        if (foto != null && !foto.isEmpty()) {
+            // Si no empieza con http, es un nombre de archivo, construir URL completa
+            if (!foto.startsWith("http")) {
+                foto = baseUrl + "/users/" + foto;
+            }
+        }
         u.setPerfilURL(foto);
 
         u.setRol(rs.getByte("rol"));

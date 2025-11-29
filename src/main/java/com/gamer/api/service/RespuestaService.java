@@ -46,7 +46,7 @@ public class RespuestaService {
         return jdbcTemplate.query(sql, new Object[]{comentarioId}, (rs, rowNum) -> {
 
             Respuesta r = new Respuesta();
-            r.setRespuestaId(rs.getInt("respuesta_id"));      // ✔ corregido
+            r.setRespuestaId(rs.getInt("respuesta_id"));
             r.setTexto(rs.getString("respuestaTexto"));
             r.setComentarioId(rs.getInt("comentario_id"));
             r.setUsuarioId(rs.getInt("usuario_id"));
