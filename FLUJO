@@ -1,0 +1,27 @@
+FLUJO JAVA
+
+[Cliente (React / Postman)]
+          |
+          v
+[Controller (@RestController)]
+          |
+          v
+[DTO de Entrada (Request DTO)]
+          |
+          v
+[Service (Lógica de negocio)]
+          |
+          v
+[Repository (DAO) o Data Access Layer]
+          |
+          v
+[Base de Datos (SQL Server, MySQL, etc.)]
+          |
+          v
+[Entity / Modelo]
+          |
+          v
+[DTO de Salida (Response DTO)]
+          |
+          v
+[Respuesta HTTP al Cliente]
